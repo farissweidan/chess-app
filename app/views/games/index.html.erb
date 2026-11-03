@@ -1,0 +1,40 @@
+<main class="home-page">
+  <div class="home-hero">
+    <span class="home-knight" aria-hidden="true">♞</span>
+    <p class="eyebrow">A SEAT AT THE BOARD IS WAITING</p>
+    <h1>Welcome to<br>Quiet Knight.</h1>
+    <p class="intro">Settle in, choose your side, and enjoy a thoughtful game of chess.</p>
+    <span class="home-board-mark" aria-hidden="true">♙ ♘ ♗ ♕ ♔ ♗ ♘ ♙</span>
+  </div>
+
+  <div class="home-actions">
+    <%= button_to "New game", new_chess_game_path, method: :post, class: "home-button home-button-primary" %>
+    <div class="computer-game-options">
+      <p>Choose your opponent</p>
+      <%= button_to "Easy · Play White", new_chess_game_path, method: :post,
+            params: { computer_color: "b", computer_difficulty: "easy" },
+            class: "home-button home-button-secondary" %>
+      <%= button_to "Easy · Play Black", new_chess_game_path, method: :post,
+            params: { computer_color: "w", computer_difficulty: "easy" },
+            class: "home-button home-button-secondary" %>
+      <%= button_to "Medium · Play White", new_chess_game_path, method: :post,
+            params: { computer_color: "b", computer_difficulty: "medium" },
+            class: "home-button home-button-secondary" %>
+      <%= button_to "Medium · Play Black", new_chess_game_path, method: :post,
+            params: { computer_color: "w", computer_difficulty: "medium" },
+            class: "home-button home-button-secondary" %>
+      <%= button_to "Hard · Play White", new_chess_game_path, method: :post,
+            params: { computer_color: "b", computer_difficulty: "hard" },
+            class: "home-button home-button-secondary" %>
+      <%= button_to "Hard · Play Black", new_chess_game_path, method: :post,
+            params: { computer_color: "w", computer_difficulty: "hard" },
+            class: "home-button home-button-secondary" %>
+    </div>
+
+    <% if @game %>
+      <%= link_to "Continue game", saved_chess_game_path(@game), class: "home-button home-button-secondary" %>
+    <% else %>
+      <p class="empty-games-message">No saved games yet. Start a new game to begin.</p>
+    <% end %>
+  </div>
+</main>

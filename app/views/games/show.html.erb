@@ -1,0 +1,128 @@
+<% pieces = {
+  "K" => "♔", "Q" => "♕", "R" => "♖", "B" => "♗", "N" => "♘", "P" => "♙",
+  "k" => "♚", "q" => "♛", "r" => "♜", "b" => "♝", "n" => "♞", "p" => "♟"
+} %>
+<main class="chess-page"
+      data-controller="chessboard"
+      data-move-url="<%= chess_move_path(@game.id) %>"
+      data-computer-move-url="<%= chess_computer_move_path(@game.id) %>"
+      data-hint-url="<%= chess_hint_path(@game.id) %>"
+      data-computer-pending="<%= @game.computer_color == @game.turn && !@game.checkmate? && !@game.stalemate? %>"
+      data-hints-available="<%= @game.computer_color != @game.turn && !@game.checkmate? && !@game.stalemate? %>"
+      data-legal-moves-url="<%= chess_legal_moves_path(@game.id, 'SQUARE') %>">
+  <header class="chess-topbar">
+    <%= link_to root_path, class: "chess-brand" do %>
+      <span class="brand-mark" aria-hidden="true">♞</span>
+      <span>Quiet Knight</span>
+    <% end %>
+    <%= link_to "Back to lobby", root_path, class: "lobby-link" %>
+  </header>
+
+  <section class="game-layout" aria-label="Chess game">
+    <header class="game-heading">
+      <div>
+        <p class="eyebrow">LOCAL MATCH · GAME <%= @game.id %></p>
+        <h1>Your game</h1>
+      </div>
+      <div class="game-controls">
+        <%= button_to "New game", new_chess_game_path, method: :post, class: "game-button game-button-primary" %>
+        <%= button_to "Reset", reset_chess_game_path(@game.id), method: :post, class: "game-button game-button-secondary" %>
+      </div>
+    </header>
+
+    <div class="match-card">
+      <div class="player-row <%= @game.turn == "b" ? "player-active" : "" %>">
+        <span class="player-piece player-piece-dark" aria-hidden="true">♚</span>
+        <span class="player-name">Black</span>
+        <span class="material-score">
+          Captured
+          <% @game.captured_pieces("b").each do |piece| %>
+            <span aria-label="<%= pieces[piece] %>"><%= pieces[piece] %></span>
+          <% end %>
+          +<%= @game.material_score("b") %>
+        </span>
+        <% if @game.turn == "b" %>
+          <span class="turn-indicator"><%= @game.computer_color == "b" ? "Thinking…" : "To move" %></span>
+        <% else %>
+          <span class="player-side"><%= @game.computer_color == "b" ? "Computer (#{@game.computer_difficulty})" : "Opponent" %></span>
+        <% end %>
+      </div>
+
+      <div class="board-frame">
+        <div class="chessboard <%= "board-flipped" if @game.computer_color == "w" %>">
+          <% @game.board.each_with_index do |rank, row| %>
+            <% rank.each_with_index do |piece, column| %>
+              <div class="square <%= (row + column).even? ? "light" : "dark" %>"
+                   data-action="click->chessboard#select"
+                   data-square="<%= ('a'.ord + column).chr %><%= 8 - row %>">
+                <% if piece %>
+                                    <span data-piece="<%= piece %>" class="<%= piece == piece.upcase ? "white-piece" : "black-piece" %> <%= "king-in-check" if @game.in_check? && ((@game.turn == "w" && piece == "K") || (@game.turn == "b" && piece == "k")) %>">
+                    <%= pieces[piece] %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="player-row <%= @game.turn == "w" ? "player-active" : "" %>">
+        <span class="player-piece player-piece-light" aria-hidden="true">♔</span>
+        <span class="player-name">White</span>
+        <span class="material-score">
+          Captured
+          <% @game.captured_pieces("w").each do |piece| %>
+            <span aria-label="<%= pieces[piece] %>"><%= pieces[piece] %></span>
+          <% end %>
+          +<%= @game.material_score("w") %>
+        </span>
+        <% if @game.turn == "w" %>
+          <span class="turn-indicator"><%= @game.computer_color == "w" ? "Thinking…" : "To move" %></span>
+        <% else %>
+          <span class="player-side"><%= @game.computer_color == "w" ? "Computer (#{@game.computer_difficulty})" : "Player" %></span>
+        <% end %>
+      </div>
+
+      <% if @game.computer_color == @game.turn && !@game.checkmate? && !@game.stalemate? %>
+        <p class="board-hint" aria-live="polite">Computer is thinking…</p>
+      <% elsif @game.in_check? && !@game.checkmate? %>
+        <p class="board-hint">Check! <%= @game.turn == "w" ? "White" : "Black" %> is in check.</p>
+      <% elsif @game.stalemate? %>
+        <p class="board-hint">Stalemate! The game is a draw.</p>
+      <% elsif !@game.checkmate? %>
+        <p class="board-hint">Select one of your pieces, then choose a destination square.</p>
+      <% end %>
+      <% if @game.computer_color != @game.turn && !@game.checkmate? && !@game.stalemate? %>
+        <button type="button" class="game-button game-button-secondary hint-button"
+                data-action="chessboard#getHint">Get a hint</button>
+        <p class="hint-message" aria-live="polite" data-hint-message></p>
+      <% end %>
+    </div>
+  </section>
+
+  <% if @game.checkmate? %>
+    <div class="checkmate-overlay" role="dialog" aria-modal="true" aria-labelledby="checkmate-title">
+      <div class="checkmate-card">
+        <span class="checkmate-crown" aria-hidden="true">♛</span>
+        <p class="checkmate-eyebrow">THE MATCH IS OVER</p>
+        <h2 id="checkmate-title">Checkmate</h2>
+        <p class="checkmate-winner"><%= @game.turn == "w" ? "Black" : "White" %> wins</p>
+        <div class="checkmate-actions">
+          <%= button_to "Play again", new_chess_game_path, method: :post, class: "game-button game-button-primary" %>
+          <%= link_to "Back to lobby", root_path, class: "game-button game-button-secondary" %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <dialog class="promotion-dialog" data-promotion-dialog>
+    <form method="dialog">
+      <p>Choose a piece for your pawn</p>
+      <button type="button" data-promotion="Q" data-action="chessboard#choosePromotion">Queen</button>
+      <button type="button" data-promotion="R" data-action="chessboard#choosePromotion">Rook</button>
+      <button type="button" data-promotion="B" data-action="chessboard#choosePromotion">Bishop</button>
+      <button type="button" data-promotion="N" data-action="chessboard#choosePromotion">Knight</button>
+      <button type="button" data-action="chessboard#cancelPromotion">Cancel</button>
+    </form>
+  </dialog>
+</main>
